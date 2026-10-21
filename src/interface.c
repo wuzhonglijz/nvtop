@@ -1698,7 +1698,7 @@ static void print_processes_on_screen(all_processes all_procs, struct process_wi
     if (process_is_field_displayed(process_type, fields_to_display)) {
       if (processes[i].process->type == gpu_process_graphical_compute) {
         printed += snprintf(&process_print_buffer[printed], process_buffer_line_size - printed, "%*s ",
-                            sizeof_process_field[process_type], "Both G+C");
+                            sizeof_process_field[process_type], "Gfx+Comp");
       } else if (processes[i].process->type == gpu_process_graphical) {
         printed += snprintf(&process_print_buffer[printed], process_buffer_line_size - printed, "%*s ",
                             sizeof_process_field[process_type], "Graphic");
