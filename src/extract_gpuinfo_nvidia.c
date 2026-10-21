@@ -48,6 +48,7 @@ typedef enum nvmlReturn_enum {
   NVML_ERROR_INVALID_ARGUMENT = 2,
   NVML_ERROR_NOT_SUPPORTED = 3,
   NVML_ERROR_NO_PERMISSION = 4,
+  NVML_ERROR_NOT_FOUND = 6,
   NVML_ERROR_INSUFFICIENT_SIZE = 7,
 } nvmlReturn_t;
 
@@ -1294,7 +1295,9 @@ static void gpuinfo_nvidia_get_process_utilization(struct gpu_info_nvidia *gpu_i
       return;
     nvmlProcessUtilizationSample_t *samples = malloc(samples_count * sizeof(*samples));
     retval = nvmlDeviceGetProcessUtilization(device, samples, &samples_count, gpu_info->last_utilization_timestamp);
-    if (retval != NVML_SUCCESS) {
+    if (retval == NVML_ERROR_NOT_FOUND) {
+      samples_count = 0;
+    } else if (retval != NVML_SUCCESS) {
       free(samples);
       return;
     }
