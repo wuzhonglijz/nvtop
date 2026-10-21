@@ -1436,30 +1436,39 @@ static void gpuinfo_nvidia_get_running_processes(struct gpu_info *_gpu_info) {
         }
       }
       memset(_gpu_info->processes, 0, _gpu_info->processes_count * sizeof(*_gpu_info->processes));
+      unsigned unique_count = 0;
       for (unsigned i = 0; i < graphical_count + compute_count; ++i) {
-        if (i < graphical_count)
-          _gpu_info->processes[i].type = gpu_process_graphical;
-        else
-          _gpu_info->processes[i].type = gpu_process_compute;
+        pid_t pid;
+        unsigned long long gpu_memory_usage;
         switch (version) {
         case 2: {
           nvmlProcessInfo_v2_t *pinfo = (nvmlProcessInfo_v2_t *)retrieved_infos;
-          _gpu_info->processes[i].pid = pinfo[i].pid;
-          _gpu_info->processes[i].gpu_memory_usage = pinfo[i].usedGpuMemory;
+          pid = pinfo[i].pid;
+          gpu_memory_usage = pinfo[i].usedGpuMemory;
         } break;
         case 3: {
           nvmlProcessInfo_v3_t *pinfo = (nvmlProcessInfo_v3_t *)retrieved_infos;
-          _gpu_info->processes[i].pid = pinfo[i].pid;
-          _gpu_info->processes[i].gpu_memory_usage = pinfo[i].usedGpuMemory;
+          pid = pinfo[i].pid;
+          gpu_memory_usage = pinfo[i].usedGpuMemory;
         } break;
         default: {
           nvmlProcessInfo_v1_t *pinfo = (nvmlProcessInfo_v1_t *)retrieved_infos;
-          _gpu_info->processes[i].pid = pinfo[i].pid;
-          _gpu_info->processes[i].gpu_memory_usage = pinfo[i].usedGpuMemory;
+          pid = pinfo[i].pid;
+          gpu_memory_usage = pinfo[i].usedGpuMemory;
         } break;
         }
-        SET_VALID(gpuinfo_process_gpu_memory_usage_valid, _gpu_info->processes[i].valid);
+        unsigned j = 0;
+        while (j < unique_count && _gpu_info->processes[j].pid != pid)
+          ++j;
+        if (j == unique_count) {
+          _gpu_info->processes[j].pid = pid;
+          _gpu_info->processes[j].gpu_memory_usage = gpu_memory_usage;
+          SET_VALID(gpuinfo_process_gpu_memory_usage_valid, _gpu_info->processes[j].valid);
+          unique_count++;
+        }
+        _gpu_info->processes[j].type |= i < graphical_count ? gpu_process_graphical : gpu_process_compute;
       }
+      _gpu_info->processes_count = unique_count;
     }
   }
   // If the GPU is in MIG mode; process utilization is not supported
